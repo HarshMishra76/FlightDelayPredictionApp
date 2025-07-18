@@ -5,7 +5,6 @@ import pickle
 import plotly.express as px
 from geopy.distance import geodesic
 
-# ------------------- CONFIG ---------------------
 st.set_page_config(page_title="Flight Delay Dashboard", layout="wide", page_icon="🛫")
 
 # ------------------- MODEL LOAD ---------------------
@@ -19,26 +18,24 @@ def load_model():
 
 model, encoder = load_model()
 
-# ------------------- SIDEBAR WITH DROPDOWN ---------------------
-st.sidebar.title("✈️ Flight Input")
-
-# Trained airlines from model encoder
+# ✅ Airline dropdown mapping setup
 trained_airlines = list(encoder.classes_)
-
-# Sample mapped callsigns per airline
-airline_options = {
-    "AA (American Airlines)": "AAL123",
-    "UA (United Airlines)": "UAL456",
-    "DL (Delta Airlines)": "DAL789",
-    "WN (Southwest Airlines)": "SWA123",
-    "B6 (JetBlue Airways)": "JBU456",
-    "AS (Alaska Airlines)": "ASA789"
+airline_mapping = {
+    "AA": ("AA (American Airlines)", "AAL123"),
+    "UA": ("UA (United Airlines)", "UAL456"),
+    "DL": ("DL (Delta Airlines)", "DAL789"),
+    "WN": ("WN (Southwest Airlines)", "SWA123"),
+    "B6": ("B6 (JetBlue Airways)", "JBU456"),
+    "AS": ("AS (Alaska Airlines)", "ASA789")
+}
+filtered_options = {
+    airline_mapping[code][0]: airline_mapping[code][1]
+    for code in trained_airlines if code in airline_mapping
 }
 
-# Filter only trained ones
-filtered_options = {k: v for k, v in airline_options.items() if k.split(" ")[0] in trained_airlines}
-
-selected_label = st.sidebar.selectbox("✈️ Choose a Flight (Dropdown)", list(filtered_options.keys()))
+# ✅ Sidebar Dropdown
+st.sidebar.title("✈️ Flight Input")
+selected_label = st.sidebar.selectbox("Choose a Flight (Trained Only)", list(filtered_options.keys()))
 callsign = filtered_options.get(selected_label, "AAL123")
 
 # ------------------- FLIGHT FETCH FUNCTION ---------------------
