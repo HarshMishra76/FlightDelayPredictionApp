@@ -42,7 +42,8 @@ except Exception as e:
 # ------------------- Prediction Inputs ------------------- #
 st.header("🧠 Predict Flight Delay")
 
-airline = st.selectbox("Airline Code", ["AA", "UA", "DL", "WN", "B6", "AS"])
+airline_classes = encoder.classes_.tolist()
+airline = st.selectbox("Airline Code", airline_classes)
 day_of_month = st.slider("Day of Month", 1, 31, 15)
 departure_time = st.slider("Scheduled Departure Time (hhmm)", 0, 2359, 900)
 carrier_delay = st.number_input("Carrier Delay (mins)", 0, 300, 0)
