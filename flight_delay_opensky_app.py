@@ -13,6 +13,7 @@ def load_model():
     return model, encoder
 
 model, encoder = load_model()
+st.write(model.feature_names_in_)
 
 # ------------------- App Title ------------------- #
 st.set_page_config(page_title="Flight Delay Predictor", layout="wide")
