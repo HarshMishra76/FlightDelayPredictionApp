@@ -55,9 +55,9 @@ late_aircraft_delay = st.number_input("Late Aircraft Delay (mins)", 0, 300, 0)
 # ------------------- Prediction ------------------- #
 if st.button("🧾 Predict Delay"):
     try:
-        airline_encoded = encoder.transform([[airline]])[0]
+if st.button("🧾 Predict Delay"):
+    try:
         input_data = pd.DataFrame([[
-            airline_encoded,
             day_of_month,
             departure_time,
             carrier_delay,
@@ -65,7 +65,20 @@ if st.button("🧾 Predict Delay"):
             nas_delay,
             security_delay,
             late_aircraft_delay
-        ]])
+        ]], columns=[
+            "DAY_OF_MONTH", "DEP_TIME", "CARRIER_DELAY", "WEATHER_DELAY",
+            "NAS_DELAY", "SECURITY_DELAY", "LATE_AIRCRAFT_DELAY"
+        ])
+
+        prediction = model.predict(input_data)[0]
+
+        if prediction == 1:
+            st.error("🔴 Prediction: Your flight **might be delayed**.")
+        else:
+            st.success("🟢 Prediction: Your flight is **on time**.")
+    except Exception as e:
+        st.error(f"Prediction failed: {e}")
+
 
         prediction = model.predict(input_data)[0]
 
