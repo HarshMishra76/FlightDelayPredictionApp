@@ -6,3 +6,4 @@ matplotlib
 geopy
 requests
 seaborn
+plotly
