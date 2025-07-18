@@ -1,9 +1,6 @@
 streamlit
-scikit-learn
 pandas
-numpy
-matplotlib
-geopy
 requests
-seaborn
 plotly
+scikit-learn
+geopy
