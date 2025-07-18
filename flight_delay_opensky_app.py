@@ -56,6 +56,7 @@ late_aircraft_delay = st.number_input("Late Aircraft Delay (mins)", 0, 300, 0)
 if st.button("🧾 Predict Delay"):
     try:
 if st.button("🧾 Predict Delay"):
+if st.button("🧾 Predict Delay"):
     try:
         input_data = pd.DataFrame([[
             day_of_month,
@@ -78,8 +79,6 @@ if st.button("🧾 Predict Delay"):
             st.success("🟢 Prediction: Your flight is **on time**.")
     except Exception as e:
         st.error(f"Prediction failed: {e}")
-
-
         prediction = model.predict(input_data)[0]
 
         if prediction == 1:
