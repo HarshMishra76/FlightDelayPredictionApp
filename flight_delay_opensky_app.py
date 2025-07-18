@@ -33,6 +33,7 @@ def get_flight_data(callsign):
     if not flight_data or not flight_data["airline"]:
     st.warning("⚠️ This airline is not supported in the prediction model.")
     st.stop()
+    
     url = "https://opensky-network.org/api/states/all"
     try:
         response = requests.get(url, timeout=10)
