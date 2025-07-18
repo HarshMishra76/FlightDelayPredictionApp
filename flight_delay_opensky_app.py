@@ -22,6 +22,7 @@ model, encoder = load_model()
 # ----------------- SIDEBAR -------------------
 st.sidebar.title("✈️ Flight Info")
 callsign = st.sidebar.text_input("Enter Flight Callsign (e.g., AAL123)", "AAL123")
+st.sidebar.info("🔍 Try callsigns like: AAL123, UAE203, AFR72B, BAW275")
 
 st.title("📊 Flight Delay Prediction Dashboard")
 st.markdown("Get live flight information and predict if your flight will be delayed.")
