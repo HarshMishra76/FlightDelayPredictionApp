@@ -39,7 +39,7 @@ airline_options = {
 filtered_options = {k: v for k, v in airline_options.items() if k.split(" ")[0] in trained_airlines}
 
 selected_label = st.sidebar.selectbox("✈️ Choose a Flight (Dropdown)", list(filtered_options.keys()))
-callsign = filtered_options[selected_label]
+callsign = filtered_options.get(selected_label, "AAL123")
 
 # ------------------- FLIGHT FETCH FUNCTION ---------------------
 @st.cache_data(ttl=30)
