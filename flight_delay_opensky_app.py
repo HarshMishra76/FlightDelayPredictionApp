@@ -1,16 +1,9 @@
 import streamlit as st
-import numpy as np
 import pandas as pd
-import pickle
 import requests
-import matplotlib.pyplot as plt
-import seaborn as sns
-import plotly.express as px
-from sklearn.metrics import confusion_matrix
+import pickle
 
-# -------------------
-# Load model and encoder
-# -------------------
+# ------------------- Load Model & Encoder ------------------- #
 @st.cache_resource
 def load_model():
     with open("delay_predictor.pkl", "rb") as f:
@@ -21,98 +14,67 @@ def load_model():
 
 model, encoder = load_model()
 
-# -------------------
-# OpenSky API (No key needed)
-# -------------------
-def get_opensky_data(callsign):
-    url = "https://opensky-network.org/api/states/all"
-    try:
-        response = requests.get(url, timeout=10)
-        data = response.json()
-        for state in data.get("states", []):
-            if callsign.upper() in str(state[1]).strip():
-                return {
-                    "callsign": state[1].strip(),
-                    "origin_country": state[2],
-                    "longitude": state[5],
-                    "latitude": state[6],
-                    "altitude": state[7],
-                    "speed": state[9] * 3.6 if state[9] else None
-                }
-    except:
-        return None
-    return None
+# ------------------- App Title ------------------- #
+st.set_page_config(page_title="Flight Delay Predictor", layout="wide")
+st.title("✈️ Real-Time Flight Delay Prediction App")
+st.markdown("Powered by **OpenSky API** and Machine Learning 🚀")
 
-# -------------------
-# Streamlit UI
-# -------------------
-st.set_page_config(page_title="Flight Delay Predictor + Live Tracker", layout="wide")
-st.title("✈️ Flight Delay Predictor + 🛰️ Live Flight Tracker")
+# ------------------- Fetch Live Flights ------------------- #
+st.header("📡 Live Flight Tracker")
+try:
+    response = requests.get("https://opensky-network.org/api/states/all", timeout=10)
+    data = response.json()
+    flights = data.get("states", [])
+    callsigns = sorted(list(set([f[1].strip() for f in flights if f[1] and f[1].strip()])))
+    
+    selected_callsign = st.selectbox("Select a live flight (callsign)", callsigns)
+    selected_flight = next((f for f in flights if f[1].strip() == selected_callsign), None)
 
-callsign = st.text_input("Enter Flight Callsign (e.g., AI202, UK752, IGO123):")
-
-if st.button("📡 Track & Predict"):
-    with st.spinner("Fetching live flight data..."):
-        flight = get_opensky_data(callsign)
-
-    if flight:
-        st.success(f"Live Data for {flight['callsign']} from {flight['origin_country']}")
-        st.map(pd.DataFrame({'lat': [flight['latitude']], 'lon': [flight['longitude']]}))
-
-        col1, col2 = st.columns(2)
-        with col1:
-            st.metric("🛬 Altitude", f"{flight['altitude']:.0f} m" if flight['altitude'] else "N/A")
-        with col2:
-            st.metric("🚀 Speed", f"{flight['speed']:.0f} km/h" if flight['speed'] else "N/A")
-
-        # For ML prediction - dummy values used for demo
-        st.subheader("🔍 Predict Flight Delay")
-        airline_code = st.selectbox("Airline Code", encoder.classes_.tolist())
-        dep_delay = st.slider("Departure Delay (min)", 0, 180, 10)
-        carrier = st.slider("Carrier Delay", 0, 100, 5)
-        weather = st.slider("Weather Delay", 0, 100, 5)
-        nas = st.slider("NAS Delay", 0, 100, 5)
-        security = st.slider("Security Delay", 0, 50, 0)
-        late_aircraft = st.slider("Late Aircraft Delay", 0, 200, 10)
-
-        if st.button("✈️ Predict Delay"):
-            try:
-                airline_encoded = encoder.transform([airline_code])[0]
-                features = np.array([[airline_encoded, dep_delay, carrier, weather, nas, security, late_aircraft]])
-                prediction = model.predict(features)
-
-                if prediction[0] == 1:
-                    st.error("❌ Prediction: Flight is likely to be DELAYED")
-                else:
-                    st.success("✅ Prediction: Flight is likely to be ON TIME")
-
-                # Graphs
-                st.subheader("📊 Delay Breakdown")
-                delay_vals = [carrier, weather, nas, security, late_aircraft]
-                delay_labels = ["Carrier", "Weather", "NAS", "Security", "Late Aircraft"]
-                st.plotly_chart(px.pie(names=delay_labels, values=delay_vals, hole=0.3))
-
-                st.subheader("📈 Feature Importance")
-                feat_names = ["AIRLINE", "DEP_DELAY", "CARRIER", "WEATHER", "NAS", "SECURITY", "LATE_AIRCRAFT"]
-                importance = model.feature_importances_
-                imp_df = pd.DataFrame({"Feature": feat_names, "Importance": importance})
-                fig_imp, ax = plt.subplots()
-                sns.barplot(x="Importance", y="Feature", data=imp_df, ax=ax)
-                st.pyplot(fig_imp)
-
-                st.subheader("🧪 Simulated Confusion Matrix")
-                y_true = [0, 1, 1, 0, 1, 0, 1, 0]
-                y_pred = [0, 1, 0, 0, 1, 0, 1, 1]
-                cm = confusion_matrix(y_true, y_pred)
-                fig_cm, ax = plt.subplots()
-                sns.heatmap(cm, annot=True, fmt="d", cmap="Blues",
-                            xticklabels=["On Time", "Delayed"],
-                            yticklabels=["On Time", "Delayed"])
-                st.pyplot(fig_cm)
-            except Exception as e:
-                st.error(f"Error: {e}")
+    if selected_flight:
+        st.success(f"✈️ {selected_callsign} is currently flying.")
+        st.write(f"**Altitude:** {selected_flight[7]} meters")
+        st.write(f"**Ground Speed:** {selected_flight[9]} m/s")
     else:
-        st.warning("Flight not found. Try a different callsign or wait a moment.")
+        st.warning("Flight not found. Try again in a moment.")
+except Exception as e:
+    st.error(f"Unable to fetch flights: {e}")
 
+# ------------------- Prediction Inputs ------------------- #
+st.header("🧠 Predict Flight Delay")
+
+airline = st.selectbox("Airline Code", ["AA", "UA", "DL", "WN", "B6", "AS"])
+day_of_month = st.slider("Day of Month", 1, 31, 15)
+departure_time = st.slider("Scheduled Departure Time (hhmm)", 0, 2359, 900)
+carrier_delay = st.number_input("Carrier Delay (mins)", 0, 300, 0)
+weather_delay = st.number_input("Weather Delay (mins)", 0, 300, 0)
+nas_delay = st.number_input("NAS Delay (mins)", 0, 300, 0)
+security_delay = st.number_input("Security Delay (mins)", 0, 300, 0)
+late_aircraft_delay = st.number_input("Late Aircraft Delay (mins)", 0, 300, 0)
+
+# ------------------- Prediction ------------------- #
+if st.button("🧾 Predict Delay"):
+    try:
+        airline_encoded = encoder.transform([[airline]])[0]
+        input_data = pd.DataFrame([[
+            airline_encoded,
+            day_of_month,
+            departure_time,
+            carrier_delay,
+            weather_delay,
+            nas_delay,
+            security_delay,
+            late_aircraft_delay
+        ]])
+
+        prediction = model.predict(input_data)[0]
+
+        if prediction == 1:
+            st.error("🔴 Prediction: Your flight **might be delayed**.")
+        else:
+            st.success("🟢 Prediction: Your flight is **on time**.")
+    except Exception as e:
+        st.error(f"Prediction failed: {e}")
+
+# ------------------- Footer ------------------- #
 st.markdown("---")
-st.markdown("<h5 style='text-align: center;'>Made with ❤️ by Harsh Mishra</h5>", unsafe_allow_html=True)
+st.markdown("Made with ❤️ by **Harsh Mishra**")
